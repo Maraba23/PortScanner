@@ -105,6 +105,37 @@ def scan_ports(host, ports):
         """
         )
 
+def scan_port_range(host, start_port, end_port):
+    ports = list(range(start_port, end_port + 1))
+    scan_ports(host, ports)
+
+def scan_all_ports(host):
+    scanner = nmap.PortScanner()
+    print(colorama.Fore.RESET + colorama.Fore.MAGENTA + f"  [+] Scanning all ports on {host}")
+    scanner.scan(host, '1-65535')
+    print(colorama.Fore.RESET + colorama.Fore.BLUE + f"""
+    [!] Host Name: {scanner[host]['hostnames'][0]['name']}
+    [!] Host Name Type: {scanner[host]['hostnames'][0]['type']}
+    [!] Status: {scanner[host]['status']['state']}
+    [!] Status Reason: {scanner[host]['status']['reason']}
+    =============================
+    """
+    )
+
+    for port in scanner[host]['tcp']:
+        state = scanner[host]['tcp'][int(port)]['state']
+        print(colorama.Fore.RESET + colorama.Fore.BLUE + f"""
+        [*] Port {port} is {state}\n
+        ==========PORT INFO==========
+        [!] TCP State: {scanner[host]['tcp'][int(port)]['state']}
+        [!] TCP Reason: {scanner[host]['tcp'][int(port)]['reason']}
+        [!] TCP Name: {scanner[host]['tcp'][int(port)]['name']}
+
+        =============================
+        """
+        )
+
+
 def scan_vulnerabilities(host):
     scanner = nmap.PortScanner()
     print(colorama.Fore.RESET + colorama.Fore.MAGENTA + f"  [+] Scanning for vulnerabilities on {host}")
@@ -138,12 +169,15 @@ def loop_ascii_art():
             time.sleep(0.8)
         counter += 1
 
+            
+        
+
 def main():
     loop_ascii_art()
 
     print("\n\n" + colorama.Fore.RESET)
     print(colorama.Fore.GREEN + "  Welcome to the Python Port Scanner!")
-    host = input("\n\n  [+] Enter the IP to scan: ")
+    host = input("\n\n  [+] Enter the ip to scan: ")
 
     try:
         if ip.ip_address(host).is_private:
@@ -187,4 +221,4 @@ def main():
         sys.exit(1)
 
 if __name__ == '__main__':
-    main()
+    main() 
