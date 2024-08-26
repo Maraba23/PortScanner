@@ -60,6 +60,7 @@ def print_ascii_art(art_number):
 
 def scan_single_port(host, port):
     scanner = nmap.PortScanner()
+    print(colorama.Fore.RESET + colorama.Fore.MAGENTA + f"  [+] Scanning port {port} on {host}")
     scanner.scan(host, str(port))
     state = scanner[host]['tcp'][int(port)]['state']
     print(colorama.Fore.RESET + colorama.Fore.BLUE + f"""
@@ -80,6 +81,7 @@ def scan_single_port(host, port):
 def scan_ports(host, ports):
     scanner = nmap.PortScanner()
     port_string = f'{ports[0]}-{ports[-1]}'
+    print(colorama.Fore.RESET + colorama.Fore.MAGENTA + f"  [+] Scanning ports {port_string} on {host}")
     scanner.scan(host, port_string)
     print(colorama.Fore.RESET + colorama.Fore.BLUE + f"""
     [!] Host Name: {scanner[host]['hostnames'][0]['name']}
@@ -109,6 +111,7 @@ def scan_port_range(host, start_port, end_port):
 
 def scan_all_ports(host):
     scanner = nmap.PortScanner()
+    print(colorama.Fore.RESET + colorama.Fore.MAGENTA + f"  [+] Scanning all ports on {host}")
     scanner.scan(host, '1-65535')
     print(colorama.Fore.RESET + colorama.Fore.BLUE + f"""
     [!] Host Name: {scanner[host]['hostnames'][0]['name']}
