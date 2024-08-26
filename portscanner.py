@@ -5,6 +5,7 @@ import multiprocessing
 import colorama
 import time
 import os
+import socket  # Adicionado para resolver nomes de domínio
 
 colorama.init()
 
@@ -18,7 +19,7 @@ ascii_art_dict = {
     | $$\  $ | $$ /$$__  $$| $$      /$$__  $$| $$  | $$ /$$__  $$       /$$  \ $$| $$       /$$__  $$| $$  | $$| $$  | $$| $$_____/| $$      
     | $$ \/  | $$|  $$$$$$$| $$     |  $$$$$$$| $$$$$$$/|  $$$$$$$      |  $$$$$$/|  $$$$$$$|  $$$$$$$| $$  | $$| $$  | $$|  $$$$$$$| $$      
     |__/     |__/ \_______/|__/      \_______/|_______/  \_______/       \______/  \_______/ \_______/|__/  |__/|__/  |__/ \_______/|__/      
-
+    
     """,
     '2': r"""
     $$\      $$\                              $$\                        $$$$$$\                                                             
@@ -28,8 +29,8 @@ ascii_art_dict = {
     $$ \$$$  $$ | $$$$$$$ |$$ |  \__|$$$$$$$ |$$ |  $$ | $$$$$$$ |       \____$$\ $$ /      $$$$$$$ |$$ |  $$ |$$ |  $$ |$$$$$$$$ |$$ |  \__|
     $$ |\$  /$$ |$$  __$$ |$$ |     $$  __$$ |$$ |  $$ |$$  __$$ |      $$\   $$ |$$ |     $$  __$$ |$$ |  $$ |$$ |  $$ |$$   ____|$$ |      
     $$ | \_/ $$ |\$$$$$$$ |$$ |     \$$$$$$$ |$$$$$$$  |\$$$$$$$ |      \$$$$$$  |\$$$$$$$\\$$$$$$$ |$$ |  $$ |$$ |  $$ |\$$$$$$$\ $$ |      
-    \__|     \__| \_______|\__|      \_______|\_______/  \_______|       \______/  \_______|\_______|\__|  \__|\__|  \__| \_______|\__|     
-
+    \__|     \__| \_______|\__|      \_______|\_______/  \_______|       \______/  \_______|\_______|\__|  \__|\__|  \__| \_______|\__|      
+    
     """,
     '3': r"""
      __       __                               __                         ______                                                             
@@ -59,105 +60,125 @@ def print_ascii_art(art_number):
     print(ascii_art_dict[art_number])
 
 def scan_single_port(host, port):
-    scanner = nmap.PortScanner()
-    print(colorama.Fore.RESET + colorama.Fore.MAGENTA + f"  [+] Scanning port {port} on {host}")
-    scanner.scan(host, str(port))
-    state = scanner[host]['tcp'][int(port)]['state']
-    print(colorama.Fore.RESET + colorama.Fore.BLUE + f"""
-    [*] Port {port} is {state}\n
-    ==========PORT INFO==========
-    [!] Host Name: {scanner[host]['hostnames'][0]['name']}
-    [!] Host Name Type: {scanner[host]['hostnames'][0]['type']}
-    [!] Status: {scanner[host]['status']['state']}
-    [!] Status Reason: {scanner[host]['status']['reason']}
-    [!] TCP State: {scanner[host]['tcp'][int(port)]['state']}
-    [!] TCP Reason: {scanner[host]['tcp'][int(port)]['reason']}
-    [!] TCP Name: {scanner[host]['tcp'][int(port)]['name']}
-
-    =============================
-    """
-    )
-
-def scan_ports(host, ports):
-    scanner = nmap.PortScanner()
-    port_string = f'{ports[0]}-{ports[-1]}'
-    print(colorama.Fore.RESET + colorama.Fore.MAGENTA + f"  [+] Scanning ports {port_string} on {host}")
-    scanner.scan(host, port_string)
-    print(colorama.Fore.RESET + colorama.Fore.BLUE + f"""
-    [!] Host Name: {scanner[host]['hostnames'][0]['name']}
-    [!] Host Name Type: {scanner[host]['hostnames'][0]['type']}
-    [!] Status: {scanner[host]['status']['state']}
-    [!] Status Reason: {scanner[host]['status']['reason']}
-    =============================
-    """
-    )
-
-    for port in scanner[host]['tcp']:
+    try:
+        scanner = nmap.PortScanner()
+        print(colorama.Fore.RESET + colorama.Fore.MAGENTA + f"  [+] Scanning port {port} on {host}")
+        scanner.scan(host, str(port))
         state = scanner[host]['tcp'][int(port)]['state']
         print(colorama.Fore.RESET + colorama.Fore.BLUE + f"""
         [*] Port {port} is {state}\n
         ==========PORT INFO==========
+        [!] Host Name: {scanner[host]['hostnames'][0]['name']}
+        [!] Host Name Type: {scanner[host]['hostnames'][0]['type']}
+        [!] Status: {scanner[host]['status']['state']}
+        [!] Status Reason: {scanner[host]['status']['reason']}
         [!] TCP State: {scanner[host]['tcp'][int(port)]['state']}
         [!] TCP Reason: {scanner[host]['tcp'][int(port)]['reason']}
         [!] TCP Name: {scanner[host]['tcp'][int(port)]['name']}
-
+    
         =============================
         """
         )
+    except Exception as e:
+        print(colorama.Fore.RED + f"[!] Error scanning port {port} on {host}: {str(e)}")
+
+def scan_ports(host, ports):
+    try:
+        scanner = nmap.PortScanner()
+        port_string = f'{ports[0]}-{ports[-1]}'
+        print(colorama.Fore.RESET + colorama.Fore.MAGENTA + f"  [+] Scanning ports {port_string} on {host}")
+        scanner.scan(host, port_string)
+        print(colorama.Fore.RESET + colorama.Fore.BLUE + f"""
+        [!] Host Name: {scanner[host]['hostnames'][0]['name']}
+        [!] Host Name Type: {scanner[host]['hostnames'][0]['type']}
+        [!] Status: {scanner[host]['status']['state']}
+        [!] Status Reason: {scanner[host]['status']['reason']}
+        =============================
+        """
+        )
+    
+        if 'tcp' in scanner[host]:
+            for port in scanner[host]['tcp']:
+                state = scanner[host]['tcp'][int(port)]['state']
+                print(colorama.Fore.RESET + colorama.Fore.BLUE + f"""
+                [*] Port {port} is {state}\n
+                ==========PORT INFO==========
+                [!] TCP State: {scanner[host]['tcp'][int(port)]['state']}
+                [!] TCP Reason: {scanner[host]['tcp'][int(port)]['reason']}
+                [!] TCP Name: {scanner[host]['tcp'][int(port)]['name']}
+    
+                =============================
+                """
+                )
+        else:
+            print(colorama.Fore.RED + "  [!] No TCP ports found or accessible on the host.")
+    except Exception as e:
+        print(colorama.Fore.RED + f"[!] Error scanning ports on {host}: {str(e)}")
 
 def scan_port_range(host, start_port, end_port):
     ports = list(range(start_port, end_port + 1))
     scan_ports(host, ports)
 
 def scan_all_ports(host):
-    scanner = nmap.PortScanner()
-    print(colorama.Fore.RESET + colorama.Fore.MAGENTA + f"  [+] Scanning all ports on {host}")
-    scanner.scan(host, '1-65535')
-    print(colorama.Fore.RESET + colorama.Fore.BLUE + f"""
-    [!] Host Name: {scanner[host]['hostnames'][0]['name']}
-    [!] Host Name Type: {scanner[host]['hostnames'][0]['type']}
-    [!] Status: {scanner[host]['status']['state']}
-    [!] Status Reason: {scanner[host]['status']['reason']}
-    =============================
-    """
-    )
-
-    for port in scanner[host]['tcp']:
-        state = scanner[host]['tcp'][int(port)]['state']
+    try:
+        scanner = nmap.PortScanner()
+        print(colorama.Fore.RESET + colorama.Fore.MAGENTA + f"  [+] Scanning all ports on {host}")
+        scanner.scan(host, '1-65535')
         print(colorama.Fore.RESET + colorama.Fore.BLUE + f"""
-        [*] Port {port} is {state}\n
-        ==========PORT INFO==========
-        [!] TCP State: {scanner[host]['tcp'][int(port)]['state']}
-        [!] TCP Reason: {scanner[host]['tcp'][int(port)]['reason']}
-        [!] TCP Name: {scanner[host]['tcp'][int(port)]['name']}
-
+        [!] Host Name: {scanner[host]['hostnames'][0]['name']}
+        [!] Host Name Type: {scanner[host]['hostnames'][0]['type']}
+        [!] Status: {scanner[host]['status']['state']}
+        [!] Status Reason: {scanner[host]['status']['reason']}
         =============================
         """
         )
-
+    
+        if 'tcp' in scanner[host]:
+            for port in scanner[host]['tcp']:
+                state = scanner[host]['tcp'][int(port)]['state']
+                print(colorama.Fore.RESET + colorama.Fore.BLUE + f"""
+                [*] Port {port} is {state}\n
+                ==========PORT INFO==========
+                [!] TCP State: {scanner[host]['tcp'][int(port)]['state']}
+                [!] TCP Reason: {scanner[host]['tcp'][int(port)]['reason']}
+                [!] TCP Name: {scanner[host]['tcp'][int(port)]['name']}
+    
+                =============================
+                """
+                )
+        else:
+            print(colorama.Fore.RED + "  [!] No TCP ports found or accessible on the host.")
+    except Exception as e:
+        print(colorama.Fore.RED + f"[!] Error scanning all ports on {host}: {str(e)}")
 
 def scan_vulnerabilities(host):
-    scanner = nmap.PortScanner()
-    print(colorama.Fore.RESET + colorama.Fore.MAGENTA + f"  [+] Scanning for vulnerabilities on {host}")
-    scanner.scan(host, arguments="--script vuln")
-    print(colorama.Fore.RESET + colorama.Fore.BLUE + f"""
-    [!] Host Name: {scanner[host]['hostnames'][0]['name']}
-    [!] Host Name Type: {scanner[host]['hostnames'][0]['type']}
-    [!] Status: {scanner[host]['status']['state']}
-    [!] Status Reason: {scanner[host]['status']['reason']}
-    =============================
-    """)
-
-    for port in scanner[host].all_tcp():
-        state = scanner[host]['tcp'][int(port)]['state']
+    try:
+        scanner = nmap.PortScanner()
+        print(colorama.Fore.RESET + colorama.Fore.MAGENTA + f"  [+] Scanning for vulnerabilities on {host}")
+        scanner.scan(host, arguments="--script vuln")
         print(colorama.Fore.RESET + colorama.Fore.BLUE + f"""
-        [*] Port {port} is {state}\n
-        ==========VULNERABILITY INFO==========
+        [!] Host Name: {scanner[host]['hostnames'][0]['name']}
+        [!] Host Name Type: {scanner[host]['hostnames'][0]['type']}
+        [!] Status: {scanner[host]['status']['state']}
+        [!] Status Reason: {scanner[host]['status']['reason']}
+        =============================
         """)
-        if 'script' in scanner[host]['tcp'][port]:
-            for script in scanner[host]['tcp'][port]['script']:
-                print(colorama.Fore.RESET + colorama.Fore.RED + f"[!] {script}: {scanner[host]['tcp'][port]['script'][script]}")
-        print("\n=============================\n")
+    
+        if 'tcp' in scanner[host]:
+            for port in scanner[host].all_tcp():
+                state = scanner[host]['tcp'][int(port)]['state']
+                print(colorama.Fore.RESET + colorama.Fore.BLUE + f"""
+                [*] Port {port} is {state}\n
+                ==========VULNERABILITY INFO==========
+                """)
+                if 'script' in scanner[host]['tcp'][port]:
+                    for script in scanner[host]['tcp'][port]['script']:
+                        print(colorama.Fore.RESET + colorama.Fore.RED + f"[!] {script}: {scanner[host]['tcp'][port]['script'][script]}")
+                print("\n=============================\n")
+        else:
+            print(colorama.Fore.RED + "  [!] No TCP ports found or accessible on the host.")
+    except Exception as e:
+        print(colorama.Fore.RED + f"[!] Error scanning vulnerabilities on {host}: {str(e)}")
 
 def loop_ascii_art():
     counter = 0
@@ -169,22 +190,36 @@ def loop_ascii_art():
             time.sleep(0.8)
         counter += 1
 
-            
-        
+def is_valid_port(port):
+    return 1 <= port <= 65535
 
 def main():
     loop_ascii_art()
 
     print("\n\n" + colorama.Fore.RESET)
     print(colorama.Fore.GREEN + "  Welcome to the Python Port Scanner!")
-    host = input("\n\n  [+] Enter the ip to scan: ")
+    host_input = input("\n\n  [+] Enter the IP or hostname to scan: ")
 
+    # Tenta interpretar a entrada como um endereço IP
     try:
-        if ip.ip_address(host).is_private:
-            print("  [!] Please enter a public IP address")
+        ip_obj = ip.ip_address(host_input)
+        resolved_ip = host_input
+    except ValueError:
+        # Se falhar, tenta resolver como hostname
+        try:
+            resolved_ip = socket.gethostbyname(host_input)
+            print(colorama.Fore.RESET + colorama.Fore.YELLOW + f"  [*] Resolved {host_input} to {resolved_ip}")
+        except socket.gaierror:
+            print(colorama.Fore.RED + "  [!] Invalid hostname")
+            sys.exit(1)
+
+    # Verifica se o endereço IP é privado
+    try:
+        if ip.ip_address(resolved_ip).is_private:
+            print(colorama.Fore.RED + "  [!] Please enter a public IP address or a hostname resolving to a public IP")
             sys.exit(1)
     except ValueError:
-        print("  [!] Invalid IP address")
+        print(colorama.Fore.RED + "  [!] Invalid IP address after resolution")
         sys.exit(1)
 
     print("\n  [+] Choose a scan type:")
@@ -198,27 +233,34 @@ def main():
         port = input("  [+] Enter the port to scan: ")
         try:
             port = int(port)
+            if not is_valid_port(port):
+                raise ValueError
         except ValueError:
-            print("  [!] Invalid port number")
+            print(colorama.Fore.RED + "  [!] Invalid port number")
             sys.exit(1)
-        scan_single_port(host, port)
+        scan_single_port(resolved_ip, port)
     elif scan_type == '2':
         start_port = input("  [+] Enter the starting port: ")
         end_port = input("  [+] Enter the ending port: ")
         try:
             start_port = int(start_port)
             end_port = int(end_port)
+            if not (is_valid_port(start_port) and is_valid_port(end_port)):
+                raise ValueError
+            if start_port > end_port:
+                print(colorama.Fore.RED + "  [!] Starting port should be less than or equal to ending port")
+                sys.exit(1)
         except ValueError:
-            print("  [!] Invalid port number")
+            print(colorama.Fore.RED + "  [!] Invalid port number")
             sys.exit(1)
-        scan_port_range(host, start_port, end_port)
+        scan_port_range(resolved_ip, start_port, end_port)
     elif scan_type == '3':
-        scan_all_ports(host)
+        scan_all_ports(resolved_ip)
     elif scan_type == '4':
-        scan_vulnerabilities(host)
+        scan_vulnerabilities(resolved_ip)
     else:
-        print("  [!] Invalid choice")
+        print(colorama.Fore.RED + "  [!] Invalid choice")
         sys.exit(1)
 
 if __name__ == '__main__':
-    main() 
+    main()
